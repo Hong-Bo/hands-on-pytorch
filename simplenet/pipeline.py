@@ -9,7 +9,9 @@ import torchvision.transforms as transforms
 class Pipeline(object):
     def __init__(self, input_size, hidden_size, output_size,
                  data_dir, transform, batch_size,
-                 log_interval, epochs, lr=0.01, momentum=0.5, save_model=False):
+                 log_interval, epochs, lr=0.01, momentum=0.5,
+                 save_model=False, load_model=None):
+
         self.model = NeuralNet(input_size, hidden_size, output_size)
         self.data = Data(data_dir, transform, batch_size)
         self.optimizer = optim.SGD(self.model.parameters(), lr=lr, momentum=momentum)
@@ -17,6 +19,7 @@ class Pipeline(object):
         self.epochs = epochs
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.save_model = save_model
+        self.load_model = load_model
 
     def train(self, epoch):
         self.model.train()
@@ -56,9 +59,15 @@ class Pipeline(object):
         ))
 
     def run(self):
+        if self.load_model is not None:
+            self.model.load_state_dict(torch.load('simplenet.ckpt'))
+            self.test()
+            return True
+
         for epoch in range(1, self.epochs + 1):
             self.train(epoch)
             self.test()
+
         if self.save_model:
             torch.save(self.model.state_dict(), 'simplenet.ckpt')
 
@@ -67,6 +76,6 @@ if __name__ == "__main__":
     pipe = Pipeline(
         input_size=28 * 28, hidden_size=500, output_size=10,
         data_dir='./data', batch_size=100, transform=transforms.ToTensor(),
-        log_interval=50, epochs=10, save_model=True
+        log_interval=50, epochs=10, save_model=True, load_model=True
         )
     pipe.run()
