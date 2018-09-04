@@ -1,4 +1,4 @@
-from neuralnet import NeuralNet
+from net import NeuralNet
 from data import Data
 import torch
 import torch.optim as optim
