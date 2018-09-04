@@ -1,5 +1,5 @@
-from neuralnet import NeuralNet
-from data import Data
+from .neuralnet import NeuralNet
+from .data import Data
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
