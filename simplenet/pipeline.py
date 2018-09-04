@@ -75,7 +75,7 @@ class Pipeline(object):
 if __name__ == "__main__":
     pipe = Pipeline(
         input_size=28 * 28, hidden_size=500, output_size=10,
-        data_dir='./data', batch_size=100, transform=transforms.ToTensor(),
+        data_dir='../data', batch_size=100, transform=transforms.ToTensor(),
         log_interval=50, epochs=10, save_model=True, load_model=True
         )
     pipe.run()
