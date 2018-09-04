@@ -9,7 +9,8 @@ import torchvision.transforms as transforms
 class Pipeline(object):
     def __init__(self, input_size, hidden_size, output_size,
                  data_dir, transform, batch_size,
-                 log_interval, epochs, lr=0.01, momentum=0.5, save_model=False):
+                 log_interval, epochs, lr=0.01, momentum=0.5,
+                 save_model=False):
         self.model = NeuralNet(input_size, hidden_size, output_size)
         self.data = Data(data_dir, transform, batch_size)
         self.optimizer = optim.SGD(self.model.parameters(), lr=lr, momentum=momentum)
@@ -59,6 +60,7 @@ class Pipeline(object):
         for epoch in range(1, self.epochs + 1):
             self.train(epoch)
             self.test()
+
         if self.save_model:
             torch.save(self.model.state_dict(), 'simplenet.ckpt')
 
