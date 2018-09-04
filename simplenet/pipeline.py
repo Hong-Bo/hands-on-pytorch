@@ -59,7 +59,7 @@ class Pipeline(object):
         ))
 
     def run(self):
-        if self.load_model is not None:
+        if self.load_model:
             self.model.load_state_dict(torch.load('simplenet.ckpt'))
             self.test()
             return True

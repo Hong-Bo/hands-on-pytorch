@@ -1,4 +1,4 @@
-from net import NeuralNet
+from net import ConvNet
 from data import Data
 import torch
 import torch.optim as optim
@@ -7,12 +7,12 @@ import torchvision.transforms as transforms
 
 
 class Pipeline(object):
-    def __init__(self, input_size, hidden_size, output_size,
+    def __init__(self, input_size, output_size,
                  data_dir, transform, batch_size,
                  log_interval, epochs, lr=0.01, momentum=0.5,
                  save_model=False, load_model=None):
 
-        self.model = NeuralNet(input_size, hidden_size, output_size)
+        self.model = ConvNet(input_size, output_size)
         self.data = Data(data_dir, transform, batch_size)
         self.optimizer = optim.SGD(self.model.parameters(), lr=lr, momentum=momentum)
         self.log_interval = log_interval
@@ -24,7 +24,7 @@ class Pipeline(object):
     def train(self, epoch):
         self.model.train()
         for batch_idx, (images, target) in enumerate(self.data.train_loader):
-            images = images.reshape(-1, 28 * 28)
+            # images = images.reshape(-1, 28 * 28)
             images, target = images.to(self.device), target.to(self.device)
 
             self.optimizer.zero_grad()
@@ -59,7 +59,7 @@ class Pipeline(object):
         ))
 
     def run(self):
-        if self.load_model is not None:
+        if self.load_model:
             self.model.load_state_dict(torch.load('simplenet.ckpt'))
             self.test()
             return True
@@ -74,8 +74,8 @@ class Pipeline(object):
 
 if __name__ == "__main__":
     pipe = Pipeline(
-        input_size=28 * 28, hidden_size=500, output_size=10,
-        data_dir='./data', batch_size=100, transform=transforms.ToTensor(),
-        log_interval=50, epochs=10, save_model=True, load_model=True
+        input_size=7*7*32, output_size=10,
+        data_dir='../data', batch_size=100, transform=transforms.ToTensor(),
+        log_interval=50, epochs=10, save_model=False, load_model=False
         )
     pipe.run()
