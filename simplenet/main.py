@@ -1,4 +1,4 @@
-from pipeline import Pipeline
+from .pipeline import Pipeline
 import torchvision.transforms as transforms
 
 
