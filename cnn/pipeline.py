@@ -58,7 +58,7 @@ class Pipeline(object):
 
     def run(self):
         if self.load_model:
-            self.model.load_state_dict(torch.load('simplenet.ckpt'))
+            self.model.load_state_dict(torch.load('cnn.ckpt'))
             self.test()
             return True
 
@@ -67,7 +67,7 @@ class Pipeline(object):
             self.test()
 
         if self.save_model:
-            torch.save(self.model.state_dict(), 'simplenet.ckpt')
+            torch.save(self.model.state_dict(), 'cnn.ckpt')
 
 
 if __name__ == "__main__":
