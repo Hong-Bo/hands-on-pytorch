@@ -74,6 +74,6 @@ if __name__ == "__main__":
     pipe = Pipeline(
         input_size=7*7*32, output_size=10,
         data_dir='../data', batch_size=100, transform=transforms.ToTensor(),
-        log_interval=50, epochs=10, save_model=False, load_model=False
+        log_interval=50, epochs=10, save_model=True, load_model=False
         )
     pipe.run()
