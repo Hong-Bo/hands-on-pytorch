@@ -31,7 +31,7 @@ class Pipeline(object):
             loss = F.cross_entropy(output, labels)
             loss.backward()
             self.optimizer.step()
-            if batch_idx % self.log_interval == 0:
+            if batch_idx % self.log_interval == 0 and batch_idx != 0:
                 print(
                     "Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
                         epoch, (batch_idx + 1) * len(images), len(self.data.train_loader.dataset),
