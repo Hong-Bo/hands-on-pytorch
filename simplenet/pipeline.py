@@ -47,7 +47,7 @@ class Pipeline(object):
             for data, target in self.data.test_loader:
                 data = data.reshape(-1, 28 * 28)
                 output = self.model(data)
-                test_loss += F.nll_loss(output, target, reduction='sum').item()
+                test_loss += F.cross_entropy(output, target, reduction='sum').item()
 
                 pred = output.max(1, keepdim=True)[1]
                 correct += pred.eq(target.view_as(pred)).sum().item()
