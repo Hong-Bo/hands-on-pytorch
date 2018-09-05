@@ -45,7 +45,7 @@ class Pipeline(object):
         test_loss, correct = 0, 0
         with torch.no_grad():
             for data, target in self.data.test_loader:
-                data = data.reshape(-1, 28 * 28)
+                # data = data.reshape(-1, 28 * 28)
                 output = self.model(data)
                 test_loss += F.nll_loss(output, target, reduction='sum').item()
 
