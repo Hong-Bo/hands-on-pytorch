@@ -27,7 +27,14 @@ class Data(object):
 
 
 if __name__ == "__main__":
-    data = Data(data_dir='../data', batch_size=100, transform=transforms.ToTensor())
+    transform = transforms.Compose([
+        transforms.Pad(4),
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomCrop(32),
+        transforms.ToTensor()
+    ])
+
+    data = Data(data_dir='../data', batch_size=100, transform=transform)
     print("type of dataset = {}".format(type(data.train_dataset)))
     print("size of the first element = {}".format(data.train_dataset[0][0].size()))
     print("label of the first element = {}".format(data.train_dataset[0][1]))
