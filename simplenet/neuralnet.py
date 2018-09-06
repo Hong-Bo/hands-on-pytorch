@@ -16,7 +16,7 @@ class NeuralNet(nn.Module):
 
 if __name__ == "__main__":
     from data import Data
-    data = Data(data_dir='./data', batch_size=100, transform=transforms.ToTensor())
+    data = Data(data_dir='../data', batch_size=100, transform=transforms.ToTensor())
     net = NeuralNet(28*28, 500, 10)
     element = data.train_dataset[0][0].reshape(-1, 28 * 28)
     out = net.forward(element)

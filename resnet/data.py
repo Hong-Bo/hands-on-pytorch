@@ -16,7 +16,7 @@ class Data(object):
         self.test_loader = self.loader(self.test_dataset, self.test_batch_size)
 
     def dataset(self, train=False):
-        return torchvision.datasets.MNIST(
+        return torchvision.datasets.CIFAR10(
             root=self.data_dir, train=train, transform=self.transform, download=True
         )
 
@@ -27,13 +27,20 @@ class Data(object):
 
 
 if __name__ == "__main__":
-    data = Data(data_dir='../data', batch_size=100, transform=transforms.ToTensor())
+    transform = transforms.Compose([
+        transforms.Pad(4),
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomCrop(32),
+        transforms.ToTensor()
+    ])
+
+    data = Data(data_dir='../data', batch_size=100, transform=transform)
     print("type of dataset = {}".format(type(data.train_dataset)))
     print("size of the first element = {}".format(data.train_dataset[0][0].size()))
     print("label of the first element = {}".format(data.train_dataset[0][1]))
 
+    print("Info for batches")
     for i, (images, labels) in enumerate(data.train_loader):
-        print("images = {}".format((images.size())))
-        print("reshaped images = {}".format((images.reshape(-1, 28*28).size())))
-        print("labels = {}".format((labels.size())))
+        print("\t size of images = {}".format((images.size())))
+        print("\t size of labels = {}".format((labels.size())))
         break
