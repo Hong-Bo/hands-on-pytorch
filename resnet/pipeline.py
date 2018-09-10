@@ -48,6 +48,7 @@ class Pipeline(object):
         test_loss, correct = 0, 0
         with torch.no_grad():
             for images, labels in self.data.test_loader:
+                images, labels = images.to(self.device), labels.to(self.device)
                 output = self.model(images)
                 test_loss += F.cross_entropy(output, labels, reduction='sum').item()
 
@@ -88,6 +89,6 @@ if __name__ == "__main__":
     ])
     cifar10 = Data(data_dir='../data', batch_size=100, transform=transform)
 
-    pipe = Pipeline(resnet, cifar10, lr=0.1, log_interval=5, epochs=10)
+    pipe = Pipeline(resnet, cifar10, lr=0.01, log_interval=10, epochs=10)
     pipe.run()
 
