@@ -5,12 +5,12 @@ import torch.nn.functional as F
 
 
 class Pipeline(object):
-    def __init__(self, model, data, lr, log_interval, epochs, save_model=False, load_model=False):
+    def __init__(self, model, data, lr, momentum, log_interval, epochs, save_model=False, load_model=False):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = model.to(self.device)
         self.data = data
         self.learning_rate = lr
-        self.optimizer = optim.SGD(self.model.parameters(), lr=lr)
+        self.optimizer = optim.SGD(self.model.parameters(), lr=lr, momentum=momentum)
         self.log_interval = log_interval
         self.epochs = epochs
         self.save_model = save_model
@@ -34,8 +34,9 @@ class Pipeline(object):
                     )
                 )
 
-            if (epoch + 1) % 20 == 0:
+            if (epoch + 1) % 5 == 0:
                 self.learning_rate /= 3
+                print(self.learning_rate)
                 self.update_lr(self.optimizer, self.learning_rate)
 
     @staticmethod
@@ -89,6 +90,6 @@ if __name__ == "__main__":
     ])
     cifar10 = Data(data_dir='../data', batch_size=100, transform=transform)
 
-    pipe = Pipeline(resnet, cifar10, lr=0.01, log_interval=30, epochs=40)
+    pipe = Pipeline(resnet, cifar10, lr=0.1, momentum=0, log_interval=30, epochs=20)
     pipe.run()
 
