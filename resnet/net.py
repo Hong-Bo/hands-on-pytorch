@@ -50,7 +50,8 @@ class ResNet(nn.Module):
         self.layer1 = self.make_layer(block, out_channels=16, blocks=layers[0])
         self.layer2 = self.make_layer(block, out_channels=32, blocks=layers[1], stride=2)
         self.layer3 = self.make_layer(block, out_channels=64, blocks=layers[2], stride=2)
-        self.avg_pool = nn.AvgPool2d(8)
+        self.layer4 = self.make_layer(block, out_channels=64, blocks=layers[3], stride=2)
+        self.avg_pool = nn.AvgPool2d(4)
         self.fc = nn.Linear(self.in_channels, num_classes)
 
     def make_layer(self, block, out_channels, blocks, stride=1):
@@ -62,14 +63,14 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        out = self.conv(x)
-        out = self.layer1(out)
-        out = self.layer2(out)
-        out = self.layer3(out)
-        out = self.avg_pool(out)
-        out = out.view(out.size(0), -1)
-        out = self.fc(out)
-
+        out = self.conv(x)   # [10, 16, 32, 32]
+        out = self.layer1(out)  # [10, 16, 32, 32]
+        out = self.layer2(out)  # [10, 32, 16, 16]
+        out = self.layer3(out)  # [10, 64, 8, 8]
+        out = self.layer4(out)  # [10, 64, 4, 4]
+        out = self.avg_pool(out)  # 10, 64, 1, 1]
+        out = out.view(out.size(0), -1)  # [10, 64]
+        out = self.fc(out)  # [10, 10]
         return out
 
 
@@ -84,7 +85,7 @@ if __name__ == '__main__':
     from data import Data
     data = Data(data_dir='../data', batch_size=10, transform=transform)
     net_block = ResBlock(in_channels=3, out_channels=16, stride=2)
-    net = ResNet(ResBlock, layers=[2, 2, 2])
+    net = ResNet(ResBlock, layers=[2, 2, 2, 2])
 
     for i, (images, labels) in enumerate(data.train_loader):
         print("size of images = {}".format((images.size())))
