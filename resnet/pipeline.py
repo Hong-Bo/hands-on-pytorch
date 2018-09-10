@@ -34,10 +34,9 @@ class Pipeline(object):
                     )
                 )
 
-            if (epoch + 1) % 5 == 0:
-                self.learning_rate /= 3
-                print(self.learning_rate)
-                self.update_lr(self.optimizer, self.learning_rate)
+        if (epoch + 1) % 5 == 0:
+            self.learning_rate /= 3
+            self.update_lr(self.optimizer, self.learning_rate)
 
     @staticmethod
     def update_lr(optimizer, lr):
@@ -74,7 +73,6 @@ class Pipeline(object):
 
         if self.save_model:
             torch.save(self.model.state_dict(), 'resnet.ckpt')
-
 
 
 if __name__ == "__main__":
