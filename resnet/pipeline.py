@@ -40,8 +40,8 @@ class Pipeline(object):
 
     @staticmethod
     def update_lr(optimizer, lr):
-        for para_group in optimizer.para_groups:
-            para_group['lr'] = lr
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = lr
 
     def test(self):
         self.model.eval()
