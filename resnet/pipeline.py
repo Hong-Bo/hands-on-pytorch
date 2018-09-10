@@ -35,7 +35,7 @@ class Pipeline(object):
                 )
 
         if (epoch + 1) % 20 == 0:
-            self.learning_rate /= 3
+            self.learning_rate /= 10
             self.update_lr(self.optimizer, self.learning_rate)
 
     @staticmethod
@@ -88,6 +88,6 @@ if __name__ == "__main__":
     ])
     cifar10 = Data(data_dir='../data', batch_size=100, transform=transform)
 
-    pipe = Pipeline(resnet, cifar10, lr=0.1, momentum=0, log_interval=100, epochs=80)
+    pipe = Pipeline(resnet, cifar10, lr=0.1, momentum=0.9, log_interval=100, epochs=80)
     pipe.run()
 
