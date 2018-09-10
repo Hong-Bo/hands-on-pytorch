@@ -34,9 +34,9 @@ class Pipeline(object):
                     )
                 )
 
-            if (epoch + 1) % 20 == 0:
-                self.learning_rate /= 3
-                self.update_lr(self.optimizer, self.learning_rate)
+        if (epoch + 1) % 20 == 0:
+            self.learning_rate /= 3
+            self.update_lr(self.optimizer, self.learning_rate)
 
     @staticmethod
     def update_lr(optimizer, lr):
