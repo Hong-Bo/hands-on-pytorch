@@ -75,7 +75,6 @@ class Pipeline(object):
             torch.save(self.model.state_dict(), 'resnet.ckpt')
 
 
-
 if __name__ == "__main__":
     from net import ResNet, ResBlock
     resnet = ResNet(ResBlock, layers=[2, 2, 2])
