@@ -89,6 +89,6 @@ if __name__ == "__main__":
     ])
     cifar10 = Data(data_dir='../data', batch_size=100, transform=transform)
 
-    pipe = Pipeline(resnet, cifar10, lr=0.01, log_interval=10, epochs=10)
+    pipe = Pipeline(resnet, cifar10, lr=0.01, log_interval=30, epochs=40)
     pipe.run()
 
