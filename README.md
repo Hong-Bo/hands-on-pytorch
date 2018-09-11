@@ -10,3 +10,6 @@ endow you with the basics of deep learning and PyTorch.
 
 2. Directory ./cnn trains a two-layered convolutional
    network using MNIST data
+
+3. Directory ./resnet trains a multi-layered ResNet using
+   CIFAR-10 data
