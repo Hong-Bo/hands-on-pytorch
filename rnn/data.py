@@ -21,10 +21,10 @@ class Dictionary(object):
 
 class Corpus(object):
     def __init__(self, data_path, is_test=False):
+        self.is_test = is_test
         self.dictionary = Dictionary()
         self.data_path = data_path
         self.token_num = self.load_data()
-        self.is_test = is_test
 
     def load_data(self):
         if not os.path.exists(self.data_path):

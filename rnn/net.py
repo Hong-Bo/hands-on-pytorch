@@ -27,7 +27,7 @@ class RNN(nn.Module):
 if __name__ == "__main__":
     import data
     data_path = "../data/wikitext-2/wiki.train.tokens"
-    corpus = data.Corpus(data_path)
+    corpus = data.Corpus(data_path, is_test=True)
     train_data = corpus.tokenize()
     print("size of training data = {}".format(train_data))
 
