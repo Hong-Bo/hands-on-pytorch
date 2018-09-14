@@ -1,4 +1,6 @@
 import torch
+import os
+import sys
 
 
 class Dictionary(object):
@@ -18,23 +20,35 @@ class Dictionary(object):
 
 
 class Corpus(object):
-    def __init__(self, data_path):
+    def __init__(self, data_path, is_test=False):
         self.dictionary = Dictionary()
         self.data_path = data_path
         self.token_num = self.load_data()
+        self.is_test = is_test
 
     def load_data(self):
-        token_num = 0
+        if not os.path.exists(self.data_path):
+            print("""
+No data was found. You can download data from: 
+https://www.salesforce.com/products/einstein/ai-research/the-wikitext-dependency-language-modeling-dataset/
+            """)
+            sys.exit()
+
+        token_num, count = 0, 0
         with open(self.data_path, 'r') as f:
             for line in f:
                 words = line.split() + ['<eos>']
                 token_num += len(words)
                 for word in words:
                     self.dictionary.add_word(word)
+
+                if self.is_test and count == 9:
+                    break
+                count += 1
         return token_num
 
-    def get_data(self, batch_size=100):
-        token = 0
+    def tokenize(self, batch_size=100):
+        token, count = 0, 0
         idx = torch.LongTensor(self.token_num)
         with open(self.data_path, 'r') as f:
             for line in f:
@@ -42,6 +56,10 @@ class Corpus(object):
                 for word in words:
                     idx[token] = self.dictionary.word2idx[word]
                     token += 1
+
+                if self.is_test and count == 9:
+                    break
+                count += 1
         num_batches = idx.size(0) // batch_size
         idx = idx[:num_batches*batch_size]
         return idx.view(batch_size, -1)
@@ -50,13 +68,14 @@ class Corpus(object):
 if __name__ == "__main__":
     dictionary = Dictionary()
     dictionary.add_word('hello')
-    print('Length of dictionary = {}'.format(len(dictionary)))
-    print('Words in dictionary = {}'.format(dictionary.word2idx))
+    print('Length of the dictionary = {}'.format(len(dictionary)))
+    print('Words in the dictionary = {}'.format(dictionary.word2idx))
 
     data_path = "../data/wikitext-2/wiki.train.tokens"
     corpus = Corpus(data_path)
-    print('Length of corpus dictionary = {}'.format(len(corpus.dictionary)))
-    print('Number of corpus tokens = {}'.format(corpus.token_num))
-    print('Size of the first element of the loaded data'.format(corpus.get_data()[0].size()))
+    print('Number of words in the dictionary = {}'.format(len(corpus.dictionary)))
+    print('Number of words in the corpus = {}'.format(corpus.token_num))
+    data = corpus.tokenize()
+    print('Size of the tokenized data = {}'.format(data.size()))
 
 
