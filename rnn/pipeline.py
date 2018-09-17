@@ -32,7 +32,7 @@ class Pipeline(object):
             self.optimizer.step()
 
             step = (i+1) // self.seq_length
-            if step == 10:
+            if step // 50 == 10:
                 print("Epoch: [{} / {}], Step: [{} / {}], Loss = {:.4f}, Perplexity = {:5.2f}".format(
                     epoch+1, self.epochs, step, self.num_batches, loss.item(), np.exp(loss.item())
                 ))
@@ -58,6 +58,6 @@ if __name__ == '__main__':
     print("Model structure: {}".format(rnn))
 
     zeros = (torch.zeros(1, 100, 1024).to(device), torch.zeros(1, 100, 1024).to(device))
-    pipe = Pipeline(rnn, device, train_data, epochs=30, seq_length=1, init_states=zeros)
+    pipe = Pipeline(rnn, device, train_data, epochs=30, seq_length=10, init_states=zeros)
     pipe.run()
 
