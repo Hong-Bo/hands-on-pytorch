@@ -6,7 +6,7 @@ import os
 
 
 class Pipeline(object):
-    def __init__(self, model, data, lr, momentum, log_interval, epochs, save_model=False, load_model=False):
+    def __init__(self, model, data, lr, momentum, log_interval, epochs, save_model=True, load_model=True):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = model.to(self.device)
         self.data = data
@@ -64,7 +64,7 @@ class Pipeline(object):
 
     def run(self):
         if self.load_model and os.path.exists('../data/resnet.ckpt'):
-            self.model.load_state_dict(torch.load('./data/resnet.ckpt'))
+            self.model.load_state_dict(torch.load('../data/resnet.ckpt'))
             self.test()
             return True
 
@@ -73,7 +73,7 @@ class Pipeline(object):
             self.test()
 
         if self.save_model:
-            torch.save(self.model.state_dict(), './data/resnet.ckpt')
+            torch.save(self.model.state_dict(), '../data/resnet.ckpt')
 
 
 if __name__ == "__main__":
