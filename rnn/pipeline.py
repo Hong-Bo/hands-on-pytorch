@@ -2,7 +2,7 @@ import os
 import torch
 import numpy as np
 import torch.nn.functional as F
-from torch.nn.utils import clip_grad_norm
+from torch.nn.utils import clip_grad_norm_
 
 
 class Pipeline(object):
@@ -30,7 +30,7 @@ class Pipeline(object):
 
             self.model.zero_grad()
             loss.backward()
-            clip_grad_norm(self.model.parameters(), 0.5)
+            clip_grad_norm_(self.model.parameters(), 0.5)
             self.optimizer.step()
 
             step = (i+1) // self.seq_length
