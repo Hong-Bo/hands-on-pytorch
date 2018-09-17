@@ -1,5 +1,5 @@
+import os
 import torch
-import torch.nn as nn
 import numpy as np
 import torch.nn.functional as F
 from torch.nn.utils import clip_grad_norm
@@ -7,7 +7,7 @@ from torch.nn.utils import clip_grad_norm
 
 class Pipeline(object):
     def __init__(self, model, device, train_data, seq_length, epochs,
-                 init_states, lr=0.1):
+                 init_states, lr=0.1, load_model=False, save_model=True):
         self.model = model
         self.device = device
         self.train_data = train_data
@@ -32,7 +32,7 @@ class Pipeline(object):
             self.optimizer.step()
 
             step = (i+1) // self.seq_length
-            if step % 40 == 10:
+            if step % 100 == 10:
                 print("Epoch: [{} / {}], Step: [{} / {}], Loss = {:.4f}, Perplexity = {:5.2f}".format(
                     epoch+1, self.epochs, step, self.num_batches, loss.item(), np.exp(loss.item())
                 ))
@@ -41,8 +41,15 @@ class Pipeline(object):
         pass
 
     def run(self):
+        if self.load_model and os.path.exists('../data/rnn.ckpt'):
+            self.model.load_state_dict(torch.load('../data/rnn.ckpt'))
+            return True
+
         for epoch in range(self.epochs):
             self.train(epoch, self.init_states)
+
+        if self.save_model:
+            torch.save(self.model.state_dict(), '../data/rnn.ckpt')
 
 
 if __name__ == '__main__':

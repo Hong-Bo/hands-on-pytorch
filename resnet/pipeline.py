@@ -2,6 +2,7 @@ import torchvision.transforms as transforms
 import torch.optim as optim
 import torch
 import torch.nn.functional as F
+import os
 
 
 class Pipeline(object):
@@ -62,8 +63,8 @@ class Pipeline(object):
         ))
 
     def run(self):
-        if self.load_model:
-            self.model.load_state_dict(torch.load('resnet.ckpt'))
+        if self.load_model and os.path.exists('../data/resnet.ckpt'):
+            self.model.load_state_dict(torch.load('./data/resnet.ckpt'))
             self.test()
             return True
 
@@ -72,7 +73,7 @@ class Pipeline(object):
             self.test()
 
         if self.save_model:
-            torch.save(self.model.state_dict(), 'resnet.ckpt')
+            torch.save(self.model.state_dict(), './data/resnet.ckpt')
 
 
 if __name__ == "__main__":

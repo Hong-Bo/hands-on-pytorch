@@ -1,5 +1,6 @@
 from neuralnet import NeuralNet
 from data import Data
+import os
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
@@ -59,8 +60,8 @@ class Pipeline(object):
         ))
 
     def run(self):
-        if self.load_model:
-            self.model.load_state_dict(torch.load('simplenet.ckpt'))
+        if self.load_model and os.path.exists('../data/simplenet.ckpt'):
+            self.model.load_state_dict(torch.load('../data/simplenet.ckpt'))
             self.test()
             return True
 
@@ -69,7 +70,7 @@ class Pipeline(object):
             self.test()
 
         if self.save_model:
-            torch.save(self.model.state_dict(), 'simplenet.ckpt')
+            torch.save(self.model.state_dict(), '../data/simplenet.ckpt')
 
 
 if __name__ == "__main__":
