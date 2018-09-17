@@ -59,7 +59,7 @@ class Pipeline(object):
 
     def run(self):
         if self.load_model and os.path.exists('../data/cnn.ckpt'):
-            self.model.load_state_dict(torch.load('./data/cnn.ckpt'))
+            self.model.load_state_dict(torch.load('../data/cnn.ckpt'))
             self.test()
             return True
 
@@ -68,7 +68,7 @@ class Pipeline(object):
             self.test()
 
         if self.save_model:
-            torch.save(self.model.state_dict(), './data/cnn.ckpt')
+            torch.save(self.model.state_dict(), '../data/cnn.ckpt')
 
 
 if __name__ == "__main__":
