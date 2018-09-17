@@ -1,5 +1,6 @@
 from net import ConvNet
 from data import Data
+import os
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
@@ -57,8 +58,8 @@ class Pipeline(object):
         ))
 
     def run(self):
-        if self.load_model:
-            self.model.load_state_dict(torch.load('cnn.ckpt'))
+        if self.load_model and os.path.exists('../data/cnn.ckpt'):
+            self.model.load_state_dict(torch.load('./data/cnn.ckpt'))
             self.test()
             return True
 
@@ -67,13 +68,13 @@ class Pipeline(object):
             self.test()
 
         if self.save_model:
-            torch.save(self.model.state_dict(), 'cnn.ckpt')
+            torch.save(self.model.state_dict(), './data/cnn.ckpt')
 
 
 if __name__ == "__main__":
     pipe = Pipeline(
         input_size=7*7*32, output_size=10,
         data_dir='../data', batch_size=100, transform=transforms.ToTensor(),
-        log_interval=50, epochs=10, save_model=True, load_model=False
+        log_interval=50, epochs=10, save_model=True, load_model=True
         )
     pipe.run()
