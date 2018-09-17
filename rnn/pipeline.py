@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
+import torch.nn.functional as F
 from torch.nn.utils import clip_grad_norm
 
 
@@ -23,7 +24,7 @@ class Pipeline(object):
 
             states = [state.detach() for state in states]
             outputs, states = self.model(inputs, states)
-            loss = nn.CrossEntropyLoss(outputs, targets.reshape(-1))
+            loss = F.cross_entropy(outputs, targets.reshape(-1))
 
             self.model.zero_grad()
             loss.backward()
@@ -31,10 +32,10 @@ class Pipeline(object):
             self.optimizer.step()
 
             step = (i+1) // self.seq_length
-            # if step == 10:
-            print("Epoch: [{} / {}], Step: [{} / {}], Loss = {:.4f}, Perplexity = {:5.2f}".format(
-                epoch+1, self.epochs, step, self.num_batches, loss.item(), np.exp(loss.item())
-            ))
+            if step == 10:
+                print("Epoch: [{} / {}], Step: [{} / {}], Loss = {:.4f}, Perplexity = {:5.2f}".format(
+                    epoch+1, self.epochs, step, self.num_batches, loss.item(), np.exp(loss.item())
+                ))
 
     def test(self):
         pass
@@ -47,7 +48,7 @@ class Pipeline(object):
 if __name__ == '__main__':
     import data
     data_path = "../data/wikitext-2/wiki.train.tokens"
-    corpus = data.Corpus(data_path, is_test=True)
+    corpus = data.Corpus(data_path, is_test=False)
     train_data = corpus.tokenize()
     print("Size of training data = {}".format(train_data.size()))
 
@@ -57,6 +58,6 @@ if __name__ == '__main__':
     print("Model structure: {}".format(rnn))
 
     zeros = (torch.zeros(1, 100, 1024).to(device), torch.zeros(1, 100, 1024).to(device))
-    pipe = Pipeline(rnn, device, train_data, epochs=30, seq_length=30, init_states=zeros)
+    pipe = Pipeline(rnn, device, train_data, epochs=30, seq_length=1, init_states=zeros)
     pipe.run()
 

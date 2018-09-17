@@ -48,5 +48,6 @@ if __name__ == "__main__":
     print("Model structure: {}".format(model))
 
     states = (torch.zeros(1, 100, 1024).to(device), torch.zeros(1, 100, 1024).to(device))
-    output = model.forward(train_data, states)
+    output, hidden_states = model.forward(train_data, states)
     print("Size of output = {}".format(output.size()))
+    print("Size of hidden states = {}".format(hidden_states[0].size()))
