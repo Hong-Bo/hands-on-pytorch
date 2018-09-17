@@ -16,6 +16,8 @@ class Pipeline(object):
         self.num_batches = self.train_data.size(1) // self.seq_length
         self.epochs = epochs
         self.init_states = init_states
+        self.load_model = load_model
+        self.save_model = save_model
 
     def train(self, epoch, states):
         for i in range(0, self.train_data.size(1) - self.seq_length, self.seq_length):
