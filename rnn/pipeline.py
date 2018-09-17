@@ -46,6 +46,7 @@ class Pipeline(object):
                 state = (torch.zeros(1, 1, 1024).to(device), torch.zeros(1, 1, 1024).to(device))
                 prob = torch.ones(len(self.dictionary))
                 input = torch.multinomial(prob, num_samples=1).unsqueeze(1).to(self.device)
+
                 for i in range(1000):
                     output, state = self.model(input, state)
                     prob = output.exp()
