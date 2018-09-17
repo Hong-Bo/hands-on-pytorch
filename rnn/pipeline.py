@@ -7,7 +7,7 @@ from torch.nn.utils import clip_grad_norm_
 
 class Pipeline(object):
     def __init__(self, model, device, train_data, seq_length, epochs,
-                 init_states, lr=0.1, load_model=False, save_model=True):
+                 init_states, lr=0.1, load_model=True, save_model=True):
         self.model = model
         self.device = device
         self.train_data = train_data
