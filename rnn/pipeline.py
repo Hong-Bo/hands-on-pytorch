@@ -1,28 +1,47 @@
 import torch
+import torch.nn as nn
+import numpy as np
+from torch.nn.utils import clip_grad_norm
 
 
 class Pipeline(object):
-    def __init__(self, model, device, data, seq_length, epochs,
-                 init_states):
+    def __init__(self, model, device, train_data, seq_length, epochs,
+                 init_states, lr=0.1):
         self.model = model
         self.device = device
-        self.data = data
+        self.train_data = train_data
+        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=lr)
         self.seq_length = seq_length
+        self.num_batches = self.train_data.size(1) // self.seq_length
         self.epochs = epochs
         self.init_states = init_states
 
-    def train(self):
-        pass
+    def train(self, epoch, states):
+        for i in range(0, self.train_data.size(1) - self.seq_length, self.seq_length):
+            inputs = self.train_data[:, i:i+self.seq_length].to(device)
+            targets = self.train_data[:, (i+1):(i+1)+self.seq_length].to(device)
+
+            states = [state.detach() for state in states]
+            outputs, states = self.model(inputs, states)
+            loss = nn.CrossEntropyLoss(outputs, targets.reshape(-1))
+
+            self.model.zero_grad()
+            loss.backward()
+            clip_grad_norm(self.model.parameters(), 0.5)
+            self.optimizer.step()
+
+            step = (i+1) // self.seq_length
+            # if step == 10:
+            print("Epoch: [{} / {}], Step: [{} / {}], Loss = {:.4f}, Perplexity = {:5.2f}".format(
+                epoch+1, self.epochs, step, self.num_batches, loss.item(), np.exp(loss.item())
+            ))
 
     def test(self):
         pass
 
     def run(self):
         for epoch in range(self.epochs):
-            for i in range(0, self.data.size(1) - self.seq_length, self.seq_length):
-                inputs = self.data[:, i:i+self.seq_length].to(device)
-
-        pass
+            self.train(epoch, self.init_states)
 
 
 if __name__ == '__main__':
@@ -37,7 +56,7 @@ if __name__ == '__main__':
     rnn = net.RNN(vocab_size=len(corpus.dictionary), embed_size=300, hidden_size=1024).to(device)
     print("Model structure: {}".format(rnn))
 
-    states = (torch.zeros(1, 100, 1024).to(device), torch.zeros(1, 100, 1024).to(device))
-    pipe = Pipeline(rnn, device, train_data, epochs=30, seq_length=30, init_states=states)
-    pass
+    zeros = (torch.zeros(1, 100, 1024).to(device), torch.zeros(1, 100, 1024).to(device))
+    pipe = Pipeline(rnn, device, train_data, epochs=30, seq_length=30, init_states=zeros)
+    pipe.run()
 

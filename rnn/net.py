@@ -33,7 +33,7 @@ class RNN(nn.Module):
         # print("Size of lstm cell states = {}".format(c.size()))
         out = out.reshape(out.size(0)*out.size(1), out.size(2))
         out = self.fc(out)
-        return out
+        return out, (h, c)
 
 
 if __name__ == "__main__":
