@@ -40,15 +40,34 @@ class Pipeline(object):
                 ))
 
     def test(self):
-        pass
+        with torch.no_grad():
+            with open('../data/language_model.txt', 'w') as f:
+                state = (torch.zeros(1, 1, 1024).to(device), torch.zeros(1, 1, 1024).to(device))
+                prob = torch.ones(len(self.train_data.dictionary))
+                input = torch.multinomial(prob, num_samples=1).unsqueeze(1).to(self.device)
+                for i in range(1000):
+                    output, state = self.model(input, state)
+                    prob = output.exp()
+                    word_id = torch.multinomial(prob, num_samples=1).unsqueeze(1).to(self.device)
+
+                    input.fill_(word_id)
+
+                    word = self.train_data.dictionary.idx2word[word_id]
+                    word = '\n' if word == '<eos>' else word + ' '
+                    f.write(word)
+
+                    if (i + 1) % 100 == 0:
+                        print("Sampled [{} / 1000] words and saved to {}".format(i+1, '../data/language_model.txt'))
 
     def run(self):
         if self.load_model and os.path.exists('../data/rnn.ckpt'):
             self.model.load_state_dict(torch.load('../data/rnn.ckpt'))
+            self.test()
             return True
 
         for epoch in range(self.epochs):
             self.train(epoch, self.init_states)
+        self.test()
 
         if self.save_model:
             torch.save(self.model.state_dict(), '../data/rnn.ckpt')
