@@ -13,12 +13,12 @@ class Pipeline(object):
                  log_interval, epochs, lr=0.01, momentum=0.5,
                  save_model=False, load_model=None):
 
-        self.model = ConvNet(input_size, output_size)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = ConvNet(input_size, output_size).to(self.device)
         self.data = Data(data_dir, transform, batch_size)
         self.optimizer = optim.SGD(self.model.parameters(), lr=lr, momentum=momentum)
         self.log_interval = log_interval
         self.epochs = epochs
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.save_model = save_model
         self.load_model = load_model
 
@@ -45,6 +45,7 @@ class Pipeline(object):
         test_loss, correct = 0, 0
         with torch.no_grad():
             for images, labels in self.data.test_loader:
+                images, labels = images.to(self.device), labels.to(self.device)
                 output = self.model(images)
                 test_loss += F.cross_entropy(output, labels, reduction='sum').item()
 
