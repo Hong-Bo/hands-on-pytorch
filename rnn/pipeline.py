@@ -49,7 +49,7 @@ class Pipeline(object):
                 for i in range(1000):
                     output, state = self.model(input, state)
                     prob = output.exp()
-                    word_id = torch.multinomial(prob, num_samples=1).unsqueeze(1).to(self.device)
+                    word_id = torch.multinomial(prob, num_samples=1).item()
 
                     input.fill_(word_id)
 
