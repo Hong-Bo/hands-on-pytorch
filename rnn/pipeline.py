@@ -32,7 +32,7 @@ class Pipeline(object):
             self.optimizer.step()
 
             step = (i+1) // self.seq_length
-            if step // 50 == 10:
+            if step / 10 == 10:
                 print("Epoch: [{} / {}], Step: [{} / {}], Loss = {:.4f}, Perplexity = {:5.2f}".format(
                     epoch+1, self.epochs, step, self.num_batches, loss.item(), np.exp(loss.item())
                 ))
