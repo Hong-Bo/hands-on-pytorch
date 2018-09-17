@@ -6,11 +6,12 @@ from torch.nn.utils import clip_grad_norm_
 
 
 class Pipeline(object):
-    def __init__(self, model, device, train_data, seq_length, epochs,
+    def __init__(self, model, device, train_data, seq_length, epochs, dictionary,
                  init_states, lr=0.1, load_model=True, save_model=True):
         self.model = model
         self.device = device
         self.train_data = train_data
+        self.dictionary = dictionary
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=lr)
         self.seq_length = seq_length
         self.num_batches = self.train_data.size(1) // self.seq_length
@@ -43,7 +44,7 @@ class Pipeline(object):
         with torch.no_grad():
             with open('../data/language_model.txt', 'w') as f:
                 state = (torch.zeros(1, 1, 1024).to(device), torch.zeros(1, 1, 1024).to(device))
-                prob = torch.ones(len(self.train_data.dictionary))
+                prob = torch.ones(len(self.dictionary))
                 input = torch.multinomial(prob, num_samples=1).unsqueeze(1).to(self.device)
                 for i in range(1000):
                     output, state = self.model(input, state)
@@ -52,7 +53,7 @@ class Pipeline(object):
 
                     input.fill_(word_id)
 
-                    word = self.train_data.dictionary.idx2word[word_id]
+                    word = self.dictionary.idx2word[word_id]
                     word = '\n' if word == '<eos>' else word + ' '
                     f.write(word)
 
@@ -86,6 +87,7 @@ if __name__ == '__main__':
     print("Model structure: {}".format(rnn))
 
     zeros = (torch.zeros(1, 100, 1024).to(device), torch.zeros(1, 100, 1024).to(device))
-    pipe = Pipeline(rnn, device, train_data, epochs=20, seq_length=10, init_states=zeros)
+    pipe = Pipeline(rnn, device, train_data, dictionary=corpus.dictionary,
+                    epochs=20, seq_length=10, init_states=zeros)
     pipe.run()
 
