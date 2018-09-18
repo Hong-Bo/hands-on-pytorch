@@ -15,9 +15,9 @@ def main():
 
     import pipeline
     zeros = (torch.zeros(1, 100, 1024).to(device), torch.zeros(1, 100, 1024).to(device))
-    pipe = pipeline.Pipeline(rnn, device, train_data, epochs=20, seq_length=10, init_states=zeros)
+    pipe = pipeline.Pipeline(rnn, device, train_data, dictionary=corpus.dictionary,
+                             epochs=20, seq_length=10, init_states=zeros)
     pipe.run()
-    pass
 
 
 if __name__ == "__main__":
