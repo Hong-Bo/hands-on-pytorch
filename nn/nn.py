@@ -2,10 +2,12 @@
 
 Example:
     # Classifying a MNIST image using this module
+
     # 1. load the Classifier from this module
     from nn import Classifier
     c = Classifier('../data', force_training=False)
     test_data = c.data.dataset(False)
+
     # 2. Make a prediction
     import random
     i = random.randint(1, len(test_data))
@@ -13,6 +15,11 @@ Example:
     print("Predicted of {}th test image ({}):".format(i, label), c.predict(image))
 
 Attributes:
+
+TODO:
+    1. logging
+    2. gitignore
+    3. differentiate deployment & training
 
 """
 import os
