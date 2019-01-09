@@ -1,12 +1,15 @@
-# hands-on-pytorch
+# Hands On Pytorch
 
 This tutorial is composed of several examples about 
 deep learning. It is expected that these examples will
-endow you with the basics of deep learning and PyTorch.
+endow a beginner with the basics of both deep learning and PyTorch.
 
+## Contents
 
-1. Directory ./simplenet trains a simple neural network
-   using MNIST data.
+Several independent projects are included in this tutorial. 
+According to the order of from simple to complex, these projects are
+
+1. Training a very simple neural network to classify MNIST data (./nn)
 
 2. Directory ./cnn trains a two-layered convolutional
    network using MNIST data
