@@ -1,0 +1,22 @@
+*__pycache__*
+.idea/
+
+/AiXLab!*
+
+# FE ignore
+node_modules
+bower_components
+
+# debug ignore
+build/
+*.log
+*.log*
+dist/
+# *.pyc
+*.cfg
+
+# IDE ignore
+.DS_Store
+.idea
+*.db
+

@@ -30,6 +30,10 @@ import torch.optim as optim
 import torch.nn.functional as F
 import torchvision.transforms as transforms
 
+import logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
 
 class Data(object):
     """Prepare MNIST data for training and testing.
@@ -146,7 +150,7 @@ class Classifier(object):
         if os.path.exists(model_dir) and not force_training:
             self.model.load_state_dict(torch.load(model_dir))
         else:
-            print("No pre-trained model is found. Start training from scratch")
+            logger.info("No pre-trained model is found. Start training from scratch")
             for epoch in range(1, self.epochs + 1):
                 self.train(epoch)
                 self.test()
@@ -166,7 +170,7 @@ class Classifier(object):
             loss.backward()
             self.optimizer.step()
             if (batch_idx+1) % self.log_interval == 0:
-                print(
+                logger.info(
                     "Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
                         epoch, (batch_idx + 1) * len(images), len(self.data.train_loader.dataset),
                         100. * batch_idx / len(self.data.train_loader), loss.item()
@@ -187,7 +191,7 @@ class Classifier(object):
 
         len_data = len(self.data.test_loader.dataset)
         test_loss /= len_data
-        print("\nTest results: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n".format(
+        logger.info("\nTest results: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n".format(
             test_loss, correct, len_data, 100. * correct/len_data
         ))
 
@@ -205,7 +209,7 @@ if __name__ == "__main__":
     i = random.randint(1, len(test_data))
     image, label = test_data[i][0], test_data[i][1]
     start = time.time()
-    print("Predicted of {}th test image ({}):".format(i, label), c.predict(image))
+    logger.info("Predicted of {}th test image ({}): {}".format(i, label, c.predict(image)))
     end = time.time()
-    print("Time consumed to predict:", end - start)
+    logger.info("Time consumed to predict: %s" % (end - start))
 
