@@ -3,12 +3,13 @@
 Example:
     # Classifying a MNIST image using this module
 
-    # 1. load the Classifier from this module
+    # Load the Classifier class from this module
     from nn import Classifier
     c = Classifier('../data', force_training=False)
+    # Load dataset
     test_data = c.data.dataset(False)
 
-    # 2. Make a prediction
+    # Make a prediction
     import random
     i = random.randint(1, len(test_data))
     image, label = test_data[i][0], test_data[i][1]
@@ -17,9 +18,6 @@ Example:
 Attributes:
 
 TODO:
-    1. logging
-    2. gitignore
-    3. differentiate deployment & training
 
 """
 import os
@@ -140,8 +138,8 @@ class Classifier(object):
                  epochs=20, lr=0.01, momentum=0.5, force_training=False):
         self.model = NN(input_size=28*28, hidden_size=500, output_size=10)
         self.data = Data(data_dir)
-        self.log_interval = log_interval
         self.epochs = epochs
+        self.log_interval = log_interval
         self.optimizer = optim.SGD(self.model.parameters(), lr=lr, momentum=momentum)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model_loaded = self.load_model(model_dir, force_training)
@@ -202,14 +200,16 @@ class Classifier(object):
 
 
 if __name__ == "__main__":
+    from torchvision import models
+    models.AlexNet
     import time
     import random
     c = Classifier('../data', force_training=False)
     test_data = c.data.dataset(False)
     i = random.randint(1, len(test_data))
-    image, label = test_data[i][0], test_data[i][1]
+    img, label = test_data[i][0], test_data[i][1]
     start = time.time()
-    logger.info("Predicted of {}th test image ({}): {}".format(i, label, c.predict(image)))
+    logger.info("Predicted of {}th test image ({}): {}".format(i, label, c.predict(img)[0]))
     end = time.time()
     logger.info("Time consumed to predict: %s" % (end - start))
 
