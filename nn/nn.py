@@ -129,18 +129,19 @@ class Classifier(object):
         i = random.randint(1, len(test_data))
         image, label = test_data[i][0], test_data[i][1]
         start = time.time()
-        logger.info("Predicted of {}th test image ({}):".format(i, label), c.predict(image)[0])
+        predict = c.predict(img.to(c.device))[0]
         end = time.time()
+        logger.info("Predicted of {}th test image ({}): {}".format(i, label, predict))
         logger.info("Time consumed to predict: %s" % (end - start))
     """
     def __init__(self, data_dir, model_dir='../data/nn.pth', log_interval=50,
                  epochs=20, lr=0.01, momentum=0.5, force_training=False):
-        self.model = NN(input_size=28*28, hidden_size=500, output_size=10)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = NN(input_size=28*28, hidden_size=500, output_size=10).to(self.device)
         self.data = Data(data_dir)
         self.epochs = epochs
         self.log_interval = log_interval
         self.optimizer = optim.SGD(self.model.parameters(), lr=lr, momentum=momentum)
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model_loaded = self.load_model(model_dir, force_training)
 
     def load_model(self, model_dir, force_training):
@@ -159,7 +160,8 @@ class Classifier(object):
         self.model.train()
         for batch_idx, (images, labels) in enumerate(self.data.train_loader):
             images = images.reshape(-1, 28 * 28)
-            images, target = images.to(self.device), labels.to(self.device)
+            images = images.to(self.device)
+            labels = labels.to(self.device)
 
             self.optimizer.zero_grad()
             output = self.model(images)
@@ -180,6 +182,9 @@ class Classifier(object):
         with torch.no_grad():
             for images, labels in self.data.test_loader:
                 images = images.reshape(-1, 28 * 28)
+                images = images.to(self.device)
+                labels = labels.to(self.device)
+
                 output = self.model(images)
                 test_loss += F.cross_entropy(output, labels, reduction='sum').item()
 
@@ -206,7 +211,8 @@ if __name__ == "__main__":
     i = random.randint(1, len(test_data))
     img, label = test_data[i][0], test_data[i][1]
     start = time.time()
-    logger.info("Predicted of {}th test image ({}): {}".format(i, label, c.predict(img)[0]))
+    predict = c.predict(img.to(c.device))[0]
     end = time.time()
+    logger.info("Predicted of {}th test image ({}): {}".format(i, label, predict))
     logger.info("Time consumed to predict: %s" % (end - start))
 

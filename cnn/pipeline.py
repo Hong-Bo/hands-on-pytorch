@@ -25,7 +25,8 @@ class Pipeline(object):
     def train(self, epoch):
         self.model.train()
         for batch_idx, (images, labels) in enumerate(self.data.train_loader):
-            images, labels = images.to(self.device), labels.to(self.device)
+            images = images.to(self.device)
+            labels = labels.to(self.device)
 
             self.optimizer.zero_grad()
             output = self.model(images)
@@ -45,7 +46,8 @@ class Pipeline(object):
         test_loss, correct = 0, 0
         with torch.no_grad():
             for images, labels in self.data.test_loader:
-                images, labels = images.to(self.device), labels.to(self.device)
+                images = images.to(self.device)
+                labels = labels.to(self.device)
                 output = self.model(images)
                 test_loss += F.cross_entropy(output, labels, reduction='sum').item()
 
