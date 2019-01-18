@@ -15,6 +15,8 @@ Example:
     image, label = test_data[i][0], test_data[i][1]
     print("Predicted of {}th test image ({}):".format(i, label), c.predict(image))
 
+Reference:
+    http://yann.lecun.com/exdb/publis/pdf/lecun-98.pdf
 
 TODO:
 
@@ -37,8 +39,8 @@ class Data(object):
 
     Args:
         data_dir (str): directory to save downloaded data
-        train_batch_size (int): batch size of training data, defaulted 100
-        test_batch_size (int): batch size of testing data, defaulted 1000
+        train_batch_size (int): batch size of training data, defaulted 256
+        test_batch_size (int): batch size of testing data, defaulted 1024
 
     Attributes:
         data_dir (str): directory to save downloaded data
@@ -61,9 +63,12 @@ class Data(object):
         train_data = data.dataset(train=True)
         image100, label100 = train_data[100][0], train_data[100][1]
     """
-    def __init__(self, data_dir, train_batch_size=100, test_batch_size=1000):
+    def __init__(self, data_dir, train_batch_size=256, test_batch_size=1024):
         self.data_dir = data_dir
-        self.transform = transforms.ToTensor()
+        self.transform = transforms.Compose([
+            # transforms.Resize((32, 32)),
+            transforms.ToTensor()
+        ])
 
         self.train_loader = self._loader(train=True, batch_size=train_batch_size)
         self.test_loader = self._loader(train=False, batch_size=test_batch_size)
@@ -83,30 +88,47 @@ class Data(object):
         )
 
 
-class NN(nn.Module):
-    """A simple neural network with two fully connected layers
+class LeNet5(nn.Module):
+    """An implementation of LeNet-5
 
     Args:
-        input_size (int): number of neurons in the input layer
-        hidden_size (int): number of neurons in the hidden layer
-        output_size (int): number of neurons in the output layer
 
     Attributes:
+        features, sequential convolutional  layers
+        fc, sequential fully connected layers
 
     Example:
-        model = NN(28*28, 500, 10)
+        model = LeNet5()
         input = torch.ones(1, 28*28)
         output = model.forward(input)
         print(output)
     """
-    def __init__(self, input_size, hidden_size, output_size):
-        super(NN, self).__init__()
-        self.fc1 = nn.Linear(in_features=input_size, out_features=hidden_size)
-        self.fc2 = nn.Linear(in_features=hidden_size, out_features=output_size)
+    def __init__(self):
+        super(LeNet5, self).__init__()
 
-    def forward(self, input):
-        out = F.relu(self.fc1(input))
-        return self.fc2(out)
+        self.features = nn.Sequential(
+            nn.Conv2d(in_channels=1, out_channels=6, kernel_size=(5, 5), padding=2),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=(2, 2), stride=2),
+            nn.Conv2d(in_channels=6, out_channels=16, kernel_size=(5, 5)),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=(2, 2), stride=2),
+            nn.Conv2d(in_channels=16, out_channels=120, kernel_size=(5, 5)),
+            nn.ReLU()
+        )
+
+        self.fc = nn.Sequential(
+            nn.Linear(in_features=120, out_features=84),
+            nn.ReLU(),
+            nn.Linear(in_features=84, out_features=10),
+            nn.LogSoftmax(dim=-1)
+        )
+
+    def forward(self, img):
+        feats = self.features(img)
+        feats = feats.view(img.size(0), -1)
+        out = self.fc(feats)
+        return out
 
 
 class Classifier(object):
@@ -129,13 +151,14 @@ class Classifier(object):
         i = random.randint(1, len(test_data))
         image, label = test_data[i][0], test_data[i][1]
         start = time.time()
-        logger.info("Predicted of {}th test image ({}):".format(i, label), c.predict(image)[0])
+        predict = c.predict(image.unsqueeze(0))[0]
         end = time.time()
-        logger.info("Time consumed to predict: %s" % (end - start))
+        logger.info("Predicted of {}th test image ({}): {}".format(i, label, predict))
+        logger.info("Time consumed to predict: {}".format(end - start))
     """
-    def __init__(self, data_dir, model_dir='../data/nn.pth', log_interval=50,
+    def __init__(self, data_dir, model_dir='../data/lenet.pth', log_interval=50,
                  epochs=20, lr=0.01, momentum=0.5, force_training=False):
-        self.model = NN(input_size=28*28, hidden_size=500, output_size=10)
+        self.model = LeNet5()
         self.data = Data(data_dir)
         self.epochs = epochs
         self.log_interval = log_interval
@@ -158,7 +181,6 @@ class Classifier(object):
     def train(self, epoch):
         self.model.train()
         for batch_idx, (images, labels) in enumerate(self.data.train_loader):
-            images = images.reshape(-1, 28 * 28)
             images, target = images.to(self.device), labels.to(self.device)
 
             self.optimizer.zero_grad()
@@ -179,7 +201,6 @@ class Classifier(object):
         test_loss, correct = 0, 0
         with torch.no_grad():
             for images, labels in self.data.test_loader:
-                images = images.reshape(-1, 28 * 28)
                 output = self.model(images)
                 test_loss += F.cross_entropy(output, labels, reduction='sum').item()
 
@@ -193,20 +214,21 @@ class Classifier(object):
         ))
 
     def predict(self, image):
-        output = self.model(image.reshape(-1, 28*28))
+        output = self.model(image)
         _, predicted = output.max(1)
         return predicted
 
 
 if __name__ == "__main__":
-    import time
-    import random
-    c = Classifier('../data', force_training=False)
-    test_data = c.data.dataset(False)
-    i = random.randint(1, len(test_data))
-    img, label = test_data[i][0], test_data[i][1]
-    start = time.time()
-    logger.info("Predicted of {}th test image ({}): {}".format(i, label, c.predict(img)[0]))
-    end = time.time()
-    logger.info("Time consumed to predict: %s" % (end - start))
-
+        # Predict the label of a random image
+        import time
+        import random
+        c = Classifier('../data', force_training=False)
+        test_data = c.data.dataset(False)
+        i = random.randint(1, len(test_data))
+        image, label = test_data[i][0], test_data[i][1]
+        start = time.time()
+        predict = c.predict(image.unsqueeze(0))[0]
+        end = time.time()
+        logger.info("Predicted of {}th test image ({}): {}".format(i, label, predict))
+        logger.info("Time consumed to predict: {}".format(end - start))
