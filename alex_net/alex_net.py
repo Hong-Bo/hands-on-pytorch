@@ -1,4 +1,4 @@
-"""An implementation of AlexNet and training using CIFAR-10
+"""An implementation of simplified AlexNet and training using CIFAR-10
 
 Example:
     # Classifying a CIFAR-10 image using this module
@@ -101,7 +101,7 @@ class AlexNet(nn.Module):
 
     Example:
         model = AlexNet(10)
-        input = torch.ones([1, 1, 32, 32])
+        input = torch.ones([1, 3, 32, 32])
         output = model(input)
         print(output)
     """
@@ -109,30 +109,30 @@ class AlexNet(nn.Module):
         super(AlexNet, self).__init__()
 
         self.features = nn.Sequential(
-            nn.Conv2d(in_channels=3, out_channels=64, kernel_size=11, padding=5, stride=4),
+            nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3, padding=1, stride=2),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(in_channels=64, out_channels=192, kernel_size=5, padding=2),
+            nn.MaxPool2d(kernel_size=2),
+            nn.Conv2d(in_channels=64, out_channels=192, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.MaxPool2d(kernel_size=2),
             nn.Conv2d(in_channels=192, out_channels=384, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels=384, out_channels=256, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.MaxPool2d(kernel_size=2),
         )
-        self.fc = nn.Linear(256, num_classes)
-        # self.fc = nn.Sequential(
-        #     nn.Dropout(),
-        #     nn.Linear(in_features=256*6*6, out_features=4096),
-        #     nn.ReLU(inplace=True),
-        #     nn.Dropout(),
-        #     nn.Linear(in_features=4096, out_features=4096),
-        #     nn.ReLU(inplace=True),
-        #     nn.Linear(in_features=4096, out_features=num_classes),
-        # )
+        # self.fc = nn.Linear(256, num_classes)
+        self.fc = nn.Sequential(
+            nn.Dropout(),
+            nn.Linear(in_features=256*2*2, out_features=4096),
+            nn.ReLU(inplace=True),
+            nn.Dropout(),
+            nn.Linear(in_features=4096, out_features=4096),
+            nn.ReLU(inplace=True),
+            nn.Linear(in_features=4096, out_features=num_classes),
+        )
 
     def forward(self, img):
         feats = self.features(img)
@@ -245,5 +245,4 @@ if __name__ == "__main__":
         end = time.time()
         logger.info("Predicted of {}th test image ({}): {}".format(i, label, predict))
         logger.info("Time consumed to predict: {}".format(end - start))
-
 
