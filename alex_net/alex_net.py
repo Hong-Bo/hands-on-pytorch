@@ -1,7 +1,7 @@
-"""Training a simple neural network to classify MNIST data
+"""An implementation of AlexNet and training using CIFAR-10
 
 Example:
-    # Classifying a MNIST image using this module
+    # Classifying a CIFAR-10 image using this module
 
     # Load the Classifier class from this module
     from nn import Classifier
@@ -16,7 +16,7 @@ Example:
     print("Predicted of {}th test image ({}):".format(i, label), c.predict(image))
 
 Reference:
-    http://yann.lecun.com/exdb/publis/pdf/lecun-98.pdf
+    https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf
 
 TODO:
 
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 class Data(object):
-    """Prepare MNIST data for training and testing.
+    """Prepare CIFAR-10 data for training and testing.
 
     Args:
         data_dir (str): directory to save downloaded data
@@ -54,19 +54,21 @@ class Data(object):
         data = Data(data_dir='../data')
         # Loading training data:
         for batch_idx, (images, labels) in enumerate(data.train_loader):
-            print("original images = {}".format((images.size())))
-            print("reshaped images = {}".format((images.reshape(-1, 28*28).size())))
+            print("image size = {}".format((images.size())))
             print("labels = {}\n{}".format(labels.size(), labels))
 
         2. Load data
         data = Data(data_dir='../data')
         train_data = data.dataset(train=True)
         image100, label100 = train_data[100][0], train_data[100][1]
+        print(image100.size(), label100)
     """
     def __init__(self, data_dir, train_batch_size=256, test_batch_size=1024):
         self.data_dir = data_dir
         self.transform = transforms.Compose([
-            # transforms.Resize((32, 32)),
+            transforms.Pad(4),
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomCrop(32),
             transforms.ToTensor()
         ])
 
@@ -74,7 +76,7 @@ class Data(object):
         self.test_loader = self._loader(train=False, batch_size=test_batch_size)
 
     def _loader(self, train, batch_size):
-        dataset = torchvision.datasets.MNIST(
+        dataset = torchvision.datasets.CIFAR10(
             root=self.data_dir, train=train, transform=self.transform, download=True
         )
 
@@ -88,7 +90,7 @@ class Data(object):
         )
 
 
-class LeNet5(nn.Module):
+class AlexNet(nn.Module):
     """An implementation of LeNet-5
 
     Args:
@@ -98,31 +100,39 @@ class LeNet5(nn.Module):
         fc, sequential fully connected layers
 
     Example:
-        model = LeNet5()
-        input = torch.ones([1, 1, 28, 28])
+        model = AlexNet(10)
+        input = torch.ones([1, 1, 32, 32])
         output = model(input)
         print(output)
     """
-    def __init__(self):
-        super(LeNet5, self).__init__()
+    def __init__(self, num_classes):
+        super(AlexNet, self).__init__()
 
         self.features = nn.Sequential(
-            nn.Conv2d(in_channels=1, out_channels=6, kernel_size=(5, 5), padding=2),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=(2, 2), stride=2),
-            nn.Conv2d(in_channels=6, out_channels=16, kernel_size=(5, 5)),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=(2, 2), stride=2),
-            nn.Conv2d(in_channels=16, out_channels=120, kernel_size=(5, 5)),
-            nn.ReLU()
+            nn.Conv2d(in_channels=3, out_channels=64, kernel_size=11, padding=5, stride=4),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(in_channels=64, out_channels=192, kernel_size=5, padding=2),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(in_channels=192, out_channels=384, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels=384, out_channels=256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
         )
-
-        self.fc = nn.Sequential(
-            nn.Linear(in_features=120, out_features=84),
-            nn.ReLU(),
-            nn.Linear(in_features=84, out_features=10),
-            nn.LogSoftmax(dim=-1)
-        )
+        self.fc = nn.Linear(256, num_classes)
+        # self.fc = nn.Sequential(
+        #     nn.Dropout(),
+        #     nn.Linear(in_features=256*6*6, out_features=4096),
+        #     nn.ReLU(inplace=True),
+        #     nn.Dropout(),
+        #     nn.Linear(in_features=4096, out_features=4096),
+        #     nn.ReLU(inplace=True),
+        #     nn.Linear(in_features=4096, out_features=num_classes),
+        # )
 
     def forward(self, img):
         feats = self.features(img)
@@ -132,9 +142,9 @@ class LeNet5(nn.Module):
 
 
 class Classifier(object):
-    """To classify a MNIST image
+    """To classify a CIFAR-10 image
     Args:
-        data_dir (path), directory of MNIST data
+        data_dir (path), directory of CIFAR-10 data
         model_dir (path), directory to load and save model files
         log_interval (int), interval of logging when training model
         epochs (int), how many epochs to train the model
@@ -156,10 +166,10 @@ class Classifier(object):
         logger.info("Predicted of {}th test image ({}): {}".format(i, label, predict))
         logger.info("Time consumed to predict: {}".format(end - start))
     """
-    def __init__(self, data_dir, model_dir='../data/lenet.pth', log_interval=50,
+    def __init__(self, data_dir, model_dir='../data/alexnet.pth', log_interval=50,
                  epochs=50, lr=0.01, momentum=0.5, force_training=False):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = LeNet5().to(self.device)
+        self.model = AlexNet(10).to(self.device)
         self.data = Data(data_dir)
         self.epochs = epochs
         self.log_interval = log_interval
@@ -224,7 +234,6 @@ class Classifier(object):
 
 
 if __name__ == "__main__":
-        # Predict the label of a random image
         import time
         import random
         c = Classifier('../data', force_training=False)
@@ -232,7 +241,9 @@ if __name__ == "__main__":
         i = random.randint(1, len(test_data))
         image, label = test_data[i][0], test_data[i][1]
         start = time.time()
-        predict = c.predict(image.unsqueeze(0).to(c.device))[0]
+        predict = c.predict(image.unsqueeze(0))[0]
         end = time.time()
         logger.info("Predicted of {}th test image ({}): {}".format(i, label, predict))
         logger.info("Time consumed to predict: {}".format(end - start))
+
+
