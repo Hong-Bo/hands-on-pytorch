@@ -1,4 +1,12 @@
-"""An implementation of simplified AlexNet and training using CIFAR-10
+"""An implementation of AlexNet to classify CIFAR-10 dataset
+
+The model is slightly tailored in several ways. The original network
+was designed for dataset with much higher resolution while images in CIFAR-10
+only have resolution of 32 * 32. Due to resolution discrepancy, this version
+of AlexNet has smaller kernel sizes and stride paces in one way and the fully
+connected layers are reduced to only one layer in another.
+
+With being trained for 100 epochs, the accuracy of this network is around 80%.
 
 Example:
     # Classifying a CIFAR-10 image using this module
@@ -39,7 +47,7 @@ class Data(object):
 
     Args:
         data_dir (str): directory to save downloaded data
-        train_batch_size (int): batch size of training data, defaulted 256
+        train_batch_size (int): batch size of training data, defaulted 128
         test_batch_size (int): batch size of testing data, defaulted 1024
 
     Attributes:
@@ -63,7 +71,7 @@ class Data(object):
         image100, label100 = train_data[100][0], train_data[100][1]
         print(image100.size(), label100)
     """
-    def __init__(self, data_dir, train_batch_size=256, test_batch_size=1024):
+    def __init__(self, data_dir, train_batch_size=128, test_batch_size=1024):
         self.data_dir = data_dir
         self.transform = transforms.Compose([
             transforms.Pad(4),
@@ -123,16 +131,7 @@ class AlexNet(nn.Module):
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2),
         )
-        # self.fc = nn.Linear(256, num_classes)
-        self.fc = nn.Sequential(
-            nn.Dropout(),
-            nn.Linear(in_features=256*2*2, out_features=4096),
-            nn.ReLU(inplace=True),
-            nn.Dropout(),
-            nn.Linear(in_features=4096, out_features=4096),
-            nn.ReLU(inplace=True),
-            nn.Linear(in_features=4096, out_features=num_classes),
-        )
+        self.fc = nn.Linear(256*2*2, num_classes)
 
     def forward(self, img):
         feats = self.features(img)
@@ -167,7 +166,7 @@ class Classifier(object):
         logger.info("Time consumed to predict: {}".format(end - start))
     """
     def __init__(self, data_dir, model_dir='../data/alexnet.pth', log_interval=50,
-                 epochs=50, lr=0.01, momentum=0.5, force_training=False):
+                 epochs=100, lr=0.01, momentum=0.5, force_training=False):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = AlexNet(10).to(self.device)
         self.data = Data(data_dir)
@@ -235,14 +234,15 @@ class Classifier(object):
 
 if __name__ == "__main__":
         import time
-        import random
         c = Classifier('../data', force_training=False)
-        test_data = c.data.dataset(False)
-        i = random.randint(1, len(test_data))
-        image, label = test_data[i][0], test_data[i][1]
+
+        test_data = Data('../data', test_batch_size=1).test_loader
+        test_data = iter(test_data)
+        image, label = test_data.next()
+
         start = time.time()
-        predict = c.predict(image.unsqueeze(0))[0]
+        predict = c.predict(image)[0]
         end = time.time()
-        logger.info("Predicted of {}th test image ({}): {}".format(i, label, predict))
+        logger.info("Prediction of the test image ({}): {}".format(label, predict))
         logger.info("Time consumed to predict: {}".format(end - start))
 
