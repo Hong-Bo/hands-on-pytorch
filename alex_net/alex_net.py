@@ -12,16 +12,18 @@ Example:
     # Classifying a CIFAR-10 image using this module
 
     # Load the Classifier class from this module
-    from nn import Classifier
     c = Classifier('../data', force_training=False)
-    # Load dataset
-    test_data = c.data.dataset(False)
 
-    # Make a prediction
-    import random
-    i = random.randint(1, len(test_data))
-    image, label = test_data[i][0], test_data[i][1]
-    print("Predicted of {}th test image ({}):".format(i, label), c.predict(image))
+    test_data = Data('../data', test_batch_size=1).test_loader
+    test_data = iter(test_data)
+    image, label = test_data.next()
+
+    import time
+    start = time.time()
+    predict = c.predict(image.to(c.device))[0]
+    end = time.time()
+    logger.info("Prediction of the test image ({}): {}".format(label, predict))
+    logger.info("Time consumed to predict: {}".format(end - start))
 
 Reference:
     https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf
@@ -177,7 +179,7 @@ class Classifier(object):
 
     def load_model(self, model_dir, force_training):
         if os.path.exists(model_dir) and not force_training:
-            self.model.load_state_dict(torch.load(model_dir))
+            self.model.load_state_dict(torch.load(model_dir, map_location='cpu'))
         else:
             logger.info("No pre-trained model is found. Start training from scratch")
             for epoch in range(1, self.epochs + 1):
@@ -241,7 +243,7 @@ if __name__ == "__main__":
         image, label = test_data.next()
 
         start = time.time()
-        predict = c.predict(image)[0]
+        predict = c.predict(image.to(c.device))[0]
         end = time.time()
         logger.info("Prediction of the test image ({}): {}".format(label, predict))
         logger.info("Time consumed to predict: {}".format(end - start))
