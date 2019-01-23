@@ -118,36 +118,26 @@ class ZFNet(nn.Module):
     def __init__(self, num_classes=10):
         super(ZFNet, self).__init__()
         self.features = nn.Sequential(
-            nn.Conv2d(in_channels=3, out_channels=12, kernel_size=2, padding=1, stride=2),
+            nn.Conv2d(in_channels=3, out_channels=96, kernel_size=4, padding=1, stride=2),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=1),
-            nn.Conv2d(in_channels=12, out_channels=32, kernel_size=3, padding=0),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=1),
-            nn.Conv2d(in_channels=32, out_channels=38, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels=38, out_channels=32, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels=32, out_channels=32, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2),
-        )
-        self.fc = nn.Sequential(
-            nn.Dropout(),
-            nn.Linear(32*6*6, 256),
-            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
 
-            nn.Dropout(),
-            nn.Linear(256, 256),
+            nn.Conv2d(in_channels=96, out_channels=256, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
 
-            nn.Linear(256, num_classes),
+            nn.Conv2d(in_channels=256, out_channels=384, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels=384, out_channels=256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
         )
+        self.fc = nn.Linear(256*2*2, num_classes)
 
     def forward(self, img):
-        print("input size:", img.size())
         feats = self.features(img)
-        print("Feature size:", feats.size())
         feats = feats.view(img.size(0), -1)
         out = self.fc(feats)
         return out
