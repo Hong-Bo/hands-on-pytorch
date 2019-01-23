@@ -76,10 +76,10 @@ class Data(object):
     def __init__(self, data_dir, train_batch_size=64, test_batch_size=1024):
         self.data_dir = data_dir
         self.transform = transforms.Compose([
-            transforms.Pad(0),
-            transforms.RandomHorizontalFlip(),
             transforms.RandomCrop(32),
-            transforms.ToTensor()
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
         ])
 
         self.train_loader = self._loader(train=True, batch_size=train_batch_size)
@@ -119,28 +119,36 @@ class VGGNet11(nn.Module):
         super(VGGNet11, self).__init__()
         self.features = nn.Sequential(
             nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3, padding=1, stride=1),
+            nn.BatchNorm2d(),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2),
 
             nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, padding=1, stride=1),
+            nn.BatchNorm2d(),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2),
 
             nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3, padding=1, stride=1),
+            nn.BatchNorm2d(),
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, padding=1, stride=1),
+            nn.BatchNorm2d(),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2),
 
             nn.Conv2d(in_channels=256, out_channels=512, kernel_size=3, padding=1, stride=1),
+            nn.BatchNorm2d(),
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3, padding=1, stride=1),
+            nn.BatchNorm2d(),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2),
 
             nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3, padding=1, stride=1),
+            nn.BatchNorm2d(),
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3, padding=1, stride=1),
+            nn.BatchNorm2d(),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2),
         )
