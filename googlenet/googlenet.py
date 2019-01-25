@@ -26,7 +26,7 @@ Example:
     logger.info("Time consumed to predict: {}".format(end - start))
 
 Reference:
-    https://arxiv.org/pdf/1311.2901.pdf
+    https://arxiv.org/pdf/1409.4842.pdf
 
 TODO:
 
@@ -238,7 +238,7 @@ class Classifier(object):
         logger.info("Prediction of the test image ({}): {}".format(label, predict))
         logger.info("Time consumed to predict: {}".format(end - start))
     """
-    def __init__(self, data_dir, model_dir='../data/vgg11.pth', log_interval=50,
+    def __init__(self, data_dir, model_dir='../data/googlenet.pth', log_interval=50,
                  epochs=100, lr=0.01, momentum=0.5, force_training=False):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = GoogLeNet(10).to(self.device)
@@ -306,8 +306,15 @@ class Classifier(object):
 
 
 if __name__ == "__main__":
-    model = GoogLeNet(10)
-    inputs = torch.ones([3, 3, 32, 32])
-    outputs = model(inputs)
-    print("Size of Output:", outputs.size())
+    import time
+    c = Classifier('../data', force_training=False)
 
+    test_data = Data('../data', test_batch_size=1).test_loader
+    test_data = iter(test_data)
+    image, label = test_data.next()
+
+    start = time.time()
+    predict = c.predict(image.to(c.device))[0]
+    end = time.time()
+    logger.info("Prediction of the test image ({}): {}".format(label, predict))
+    logger.info("Time consumed to predict: {}".format(end - start))
