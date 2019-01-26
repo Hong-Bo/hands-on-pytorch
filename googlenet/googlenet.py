@@ -6,7 +6,7 @@ only have resolution of 32 * 32. Due to resolution discrepancy, this version
 of GoogLeNet has smaller kernel sizes and stride paces in one way and the fully
 connected layers are reduced to only one layer in another.
 
-With being trained for 100 epochs, the accuracy of this network is around 80%.
+With being trained for 100 epochs, the accuracy of this network is around 92%.
 
 Example:
     # Classifying a CIFAR-10 image using this module
@@ -50,7 +50,7 @@ class Data(object):
     Args:
         data_dir (str): directory to save downloaded data
         train_batch_size (int): batch size of training data, defaulted 64
-        test_batch_size (int): batch size of testing data, defaulted 1024
+        test_batch_size (int): batch size of testing data, defaulted 256
 
     Attributes:
         data_dir (str): directory to save downloaded data
@@ -73,7 +73,7 @@ class Data(object):
         image100, label100 = train_data[100][0], train_data[100][1]
         print(image100.size(), label100)
     """
-    def __init__(self, data_dir, train_batch_size=64, test_batch_size=1024):
+    def __init__(self, data_dir, train_batch_size=64, test_batch_size=256):
         self.data_dir = data_dir
         self.transform = transforms.Compose([
             transforms.RandomCrop(32, padding=2),
