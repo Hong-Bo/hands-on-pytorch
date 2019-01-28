@@ -161,6 +161,7 @@ class DenseNet(nn.Module):
             ('conv0', nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3, padding=1)),
             ('bn0', nn.BatchNorm2d(num_features=64)),
             ('relu0', nn.ReLU(inplace=True)),
+            ('pool0', nn.MaxPool2d(kernel_size=3, stride=2, padding=1)),
         ]))
         self.dense_layers = self._make_blocks(block_config, growth_rate, bn_size)
         self.fc = nn.Linear(1024, num_classes)
@@ -217,7 +218,7 @@ class DenseNet(nn.Module):
         out = self.dense_layers(out)
         # print("size of dense layers:", out.size())
         out = F.relu(out, inplace=True)
-        out = F.avg_pool2d(out, kernel_size=4, stride=1)
+        out = F.avg_pool2d(out, kernel_size=2, stride=1)
         # print("size of avg poll:", out.size())
         out = out.view(out.size(0), -1)
         out = self.fc(out)
