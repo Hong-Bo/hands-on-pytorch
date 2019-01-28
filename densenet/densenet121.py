@@ -1,9 +1,9 @@
-"""An implementation of ResNet-18 to classify CIFAR-10 dataset
+"""An implementation of DenseNet to classify CIFAR-10 dataset
 
 The model is slightly tailored in several ways. The original network
 was designed for dataset with much higher resolution while images in CIFAR-10
 only have resolution of 32 * 32. Due to resolution discrepancy, this version
-of ResNet-18 has smaller kernel sizes and stride paces in one way and the fully
+of DenseNet has smaller kernel sizes and stride paces in one way and the fully
 connected layers are reduced to only one layer in another.
 
 With being trained for 100 epochs, the accuracy of this network is around 92%.
@@ -26,7 +26,7 @@ Example:
     logger.info("Time consumed to predict: {}".format(end - start))
 
 Reference:
-    https://arxiv.org/pdf/1512.03385.pdf
+    https://arxiv.org/pdf/1409.4842.pdf
 
 TODO:
 
@@ -38,6 +38,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 import torchvision.transforms as transforms
+from collections import OrderedDict
 
 import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -100,100 +101,124 @@ class Data(object):
         )
 
 
-class ResidualBlock(nn.Module):
-    """An implementation of Residual Module
+class DenseLayer(nn.Module):
+    """An implementation of Inception module
 
     Example:
-        inputs = torch.ones([2, 3, 32, 32])
-        res_block = ResidualBlock(in_channels=3, out_channels=64, stride=1)
-        outputs = res_block(inputs)
+        inputs = torch.ones([2, 64, 32, 32])
+        dense = DenseLayer(in_channels=64, bn_size=4, growth_rate=32)
+        outputs = dense(inputs)
         print("Size of Output:", outputs.size())
-
-        res_block = ResidualBlock(in_channels=3, out_channels=64, stride=2)
-        outputs = res_block(inputs)
-        print("With Down Sample:", outputs.size())
     """
-    def __init__(self, in_channels, out_channels, stride=1):
-        super(ResidualBlock, self).__init__()
-        self.layers = nn.Sequential(
-            self._conv3x3(in_channels, out_channels, stride),
-            nn.BatchNorm2d(num_features=out_channels),
+    def __init__(self, in_channels, bn_size, growth_rate):
+        super(DenseLayer, self).__init__()
+        self.block = nn.Sequential(
+            nn.BatchNorm2d(in_channels),
             nn.ReLU(inplace=True),
-            self._conv3x3(out_channels, out_channels, stride=1),
-            nn.BatchNorm2d(num_features=out_channels),
+            nn.Conv2d(in_channels=in_channels, out_channels=bn_size*growth_rate,
+                      kernel_size=1, stride=1, bias=False),
+            nn.BatchNorm2d(num_features=bn_size*growth_rate),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels=bn_size*growth_rate, out_channels=growth_rate,
+                      kernel_size=3, stride=1, padding=1, bias=False)
         )
-        self.relu = nn.ReLU(inplace=True)
-        self.down_sample = self._down_sample(in_channels, out_channels, stride)
-
-    @staticmethod
-    def _conv3x3(in_channels, out_channels, stride):
-        """
-        Construct a convolutional layer with kernel size = 3 * 3
-        :param in_channels: integer, the input channels
-        :param out_channels: integer, the output channels
-        :param stride: integer, convolution stride
-        :return: a convolutional layer
-        """
-        return nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=False)
-
-    @staticmethod
-    def _down_sample(in_channels, out_channels, stride=1):
-        if stride != 1 or in_channels != out_channels:
-            return nn.Sequential(
-                nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride, bias=False)
-            )
-        else:
-            return None
 
     def forward(self, x):
-        out = self.layers(x)
-        if self.down_sample:
-            x = self.down_sample(x)
-        out += x
-        return self.relu(out)
+        y = self.block(x)
+        return torch.cat([x, y], 1)
 
 
-class ResNet18(nn.Module):
-    """An implementation of ResNet-18
+class Transition(nn.Sequential):
+    def __init__(self, num_features):
+        super(Transition, self).__init__()
+        self.add_module('bn', nn.BatchNorm2d(num_features=num_features)),
+        self.add_module('relu', nn.ReLU(inplace=True)),
+        self.add_module('conv', nn.Conv2d(num_features, num_features // 2, kernel_size=1, stride=1, bias=False)),
+        self.add_module('poll', nn.AvgPool2d(kernel_size=2, stride=2))
+
+
+class DenseNet(nn.Module):
+    """An implementation of DenseNet
 
     Args:
+        block_config, tuple, how many dense layers in each block
+        growth_rate, integer, how many filters to add each layer
+        bn_size, integer, relative factor of bottleneck to growth rate
 
     Attributes:
-        features, sequential convolutional  layers
+        layers, sequential convolutional layers
         fc, sequential fully connected layers
 
     Example:
-        model = ResNet18(10)
-        inputs = torch.ones([3, 3, 32, 32])
-        outputs = model(inputs)
-        print(outputs)
+        model = DenseNet(10)
+        input = torch.ones([1, 3, 32, 32])
+        output = model(input)
+        print(output)
     """
-    def __init__(self, num_classes=10):
-        super(ResNet18, self).__init__()
-        self.pre_layers = nn.Sequential(
-            nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3, padding=1),
-            nn.BatchNorm2d(num_features=64),
-            nn.ReLU(inplace=True),
-        )
-        self.res_layers = self._make_layer([2]*4, [64, 128, 256, 512], [1, 2, 2, 2], 64)
-
-        self.avg_pool = nn.AvgPool2d(kernel_size=4, stride=1)
-        self.fc = nn.Linear(512, num_classes)
+    def __init__(self, num_classes=10, block_config=(6, 12, 24, 16), growth_rate=32, bn_size=4):
+        super(DenseNet, self).__init__()
+        self.pre_layers = nn.Sequential(OrderedDict([
+            ('conv0', nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3, padding=1)),
+            ('bn0', nn.BatchNorm2d(num_features=64)),
+            ('relu0', nn.ReLU(inplace=True)),
+        ]))
+        self.dense_layers = self._make_blocks(block_config, growth_rate, bn_size)
+        self.fc = nn.Linear(1024, num_classes)
 
     @staticmethod
-    def _make_layer(layers, out_channels, strides, in_channel):
-        residual_layers = []
-        for para in zip(layers, out_channels, strides):
-            residual_layers.append(ResidualBlock(in_channel, para[1], para[2]))
-            for i in range(1, para[0]):
-                residual_layers.append(ResidualBlock(para[1], para[1]))
-            in_channel = para[1]
-        return nn.Sequential(*residual_layers)
+    def _make_blocks(block_config, growth_rate, bn_size, init_channels=64):
+        """
+        Generate dense layers
+
+        :param block_config: tuple, how many dense layers in each block
+        :param growth_rate: integer, growth rate of the network
+        :param bn_size: integer, relative factor of bottleneck to growth rate
+        :param init_channels: integer, initial size of input channels, defaulted 64
+        :return: stacked dense layers
+
+        Example:
+        blocks = DenseNet._make_blocks(block_config=[6, 12], init_channels=64, growth_rate=32, bn_size=4)
+        print(blocks)
+        """
+        features = nn.Sequential(OrderedDict([]))
+        for i, block_num in enumerate(block_config):
+            dense_block = DenseNet._make_layers(block_num, init_channels, growth_rate, bn_size)
+            features.add_module('dense_block%d' % (i+1), dense_block)
+            init_channels += block_num * growth_rate
+            if i != len(block_config) - 1:
+                features.add_module('transition%d' % (i+1), Transition(init_channels))
+                init_channels = init_channels // 2
+        features.add_module('norm5', nn.BatchNorm2d(num_features=1024))
+        return features
+
+    @staticmethod
+    def _make_layers(num_layers, in_channels, growth_rate, bn_size):
+        """
+        Generate dense layers
+
+        :param num_layers: integer, how many layers to generate
+        :param in_channels: integer, size of input channels
+        :param growth_rate: integer, growth rate of the network
+        :param bn_size: integer, relative factor of bottleneck to growth rate
+        :return: stacked dense layers
+
+        Example:
+        print(DenseNet._make_layers(num_layers=6, in_channels=64, growth_rate=32, bn_size=4))
+        """
+        features = nn.Sequential(OrderedDict([]))
+        for i in range(num_layers):
+            dense_layer = DenseLayer(in_channels + i*growth_rate, bn_size, growth_rate)
+            features.add_module('dense_layer%d' % (i+1), dense_layer)
+        return features
 
     def forward(self, images):
         out = self.pre_layers(images)
-        out = self.res_layers(out)
-        out = self.avg_pool(out)
+        # print("size of pre layers:", out.size())
+        out = self.dense_layers(out)
+        # print("size of dense layers:", out.size())
+        out = F.relu(out, inplace=True)
+        out = F.avg_pool2d(out, kernel_size=4, stride=1)
+        # print("size of avg poll:", out.size())
         out = out.view(out.size(0), -1)
         out = self.fc(out)
         return out
@@ -212,23 +237,23 @@ class Classifier(object):
 
     Example:
         # Predict the label of a random image
+        import time
         c = Classifier('../data', force_training=False)
 
         test_data = Data('../data', test_batch_size=1).test_loader
         test_data = iter(test_data)
         image, label = test_data.next()
 
-        import time
         start = time.time()
         predict = c.predict(image.to(c.device))[0]
         end = time.time()
         logger.info("Prediction of the test image ({}): {}".format(label, predict))
         logger.info("Time consumed to predict: {}".format(end - start))
     """
-    def __init__(self, data_dir, model_dir='../data/resnet18.pth', log_interval=50,
+    def __init__(self, data_dir, model_dir='../data/densenet.pth', log_interval=50,
                  epochs=100, lr=0.01, momentum=0.5, force_training=False):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = ResNet18(10).to(self.device)
+        self.model = DenseNet(10).to(self.device)
         self.data = Data(data_dir)
         self.epochs = epochs
         self.log_interval = log_interval
@@ -286,20 +311,20 @@ class Classifier(object):
             test_loss, correct, len_data, 100. * correct/len_data
         ))
 
-    def predict(self, img):
-        output = self.model(img)
+    def predict(self, image):
+        output = self.model(image)
         _, predicted = output.max(1)
         return predicted
 
 
 if __name__ == "__main__":
+    import time
     c = Classifier('../data', force_training=False)
 
     test_data = Data('../data', test_batch_size=1).test_loader
     test_data = iter(test_data)
     image, label = test_data.next()
 
-    import time
     start = time.time()
     predict = c.predict(image.to(c.device))[0]
     end = time.time()
