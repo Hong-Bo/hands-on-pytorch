@@ -26,7 +26,7 @@ Example:
     logger.info("Time consumed to predict: {}".format(end - start))
 
 Reference:
-    https://arxiv.org/pdf/1409.4842.pdf
+    https://arxiv.org/pdf/1608.06993.pdf
 
 TODO:
 
