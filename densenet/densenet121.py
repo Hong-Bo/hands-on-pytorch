@@ -6,7 +6,7 @@ only have resolution of 32 * 32. Due to resolution discrepancy, this version
 of DenseNet has smaller kernel sizes and stride paces in one way and the fully
 connected layers are reduced to only one layer in another.
 
-With being trained for 100 epochs, the accuracy of this network is around 92%.
+With being trained for 100 epochs, the accuracy of this network is around 90%.
 
 Example:
     # Classifying a CIFAR-10 image using this module
@@ -252,7 +252,7 @@ class Classifier(object):
         logger.info("Time consumed to predict: {}".format(end - start))
     """
     def __init__(self, data_dir, model_dir='../data/densenet.pth', log_interval=50,
-                 epochs=100, lr=0.01, momentum=0.5, force_training=False):
+                 epochs=100, lr=0.1, momentum=0.9, force_training=False):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = DenseNet(10).to(self.device)
         self.data = Data(data_dir)
@@ -266,7 +266,9 @@ class Classifier(object):
             self.model.load_state_dict(torch.load(model_dir, map_location='cpu'))
         else:
             logger.info("No pre-trained model is found. Start training from scratch")
+            scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=32, gamma=0.1)
             for epoch in range(1, self.epochs + 1):
+                scheduler.step()
                 self.train(epoch)
                 self.test()
             torch.save(self.model.state_dict(), model_dir)
